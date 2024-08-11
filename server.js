@@ -1,9 +1,13 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const connectDB = require("./config/db");
 const emailRouter = require("./routes/email");
 const authRouter = require("./routes/auth");
 
 dotenv.config();
+
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 

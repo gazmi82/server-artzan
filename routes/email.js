@@ -14,6 +14,4 @@ router.get(
   })
 );
 
-console.log(typeof router); // Should output 'function'
-
 module.exports = router;
