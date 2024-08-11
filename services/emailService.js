@@ -1,34 +1,23 @@
-const nodemailer = require("nodemailer");
-const { getAccessToken } = require("../services/authService");
+const Subscriber = require("../models/Subscriber");
 const asyncHandler = require("../utils/asyncHandler");
-require("dotenv").config();
 
-const createTransporter = asyncHandler(async () => {
-  const accessToken = await getAccessToken();
+const handleSubscription = asyncHandler(async (email) => {
+  // Save the email to a database, log it, etc.
+  const existingSuscriber = await Subscriber.findOne({ email });
 
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      type: "OAuth2",
-      user: process.env.EMAIL,
-      clientId: process.env.OAUTH_CLIENTID,
-      clientSecret: process.env.OAUTH_CLIENT_SECRET,
-      refreshToken: process.env.OAUTH_REFRESH_TOKEN,
-      accessToken: accessToken,
-    },
-  });
+  if (existingSuscriber) {
+    throw new Error("Email already exist");
+  }
+
+  // Create new subscr
+  const newSubscriber = await Subscriber.create({ email });
+  // Save the subscr
+  await newSubscriber.save();
+
+  console.log(`Received subscription from email: ${email}`);
+
+  // Simulate some processing time
+  return new Promise((resolve) => setTimeout(resolve, 500));
 });
 
-const sendEmail = asyncHandler(async (transporter) => {
-  const mailOptions = {
-    from: process.env.EMAIL,
-    to: process.env.EMAIL,
-    subject: "Nodemailer API",
-    text: "Hi from your nodemailer API",
-  };
-
-  const result = await transporter.sendMail(mailOptions);
-  return result;
-});
-
-module.exports = { createTransporter, sendEmail };
+module.exports = { handleSubscription };

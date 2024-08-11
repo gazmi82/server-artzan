@@ -1,8 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const connectDB = require("./config/db");
-const emailRouter = require("./routes/email");
-const authRouter = require("./routes/auth");
+const connectDB = require("./config/db"); // Ensure the path is correct
+const subscribeRouter = require("./routes/subscribe");
 
 dotenv.config();
 
@@ -10,9 +9,9 @@ dotenv.config();
 connectDB();
 
 const app = express();
+app.use(express.json());
 
-app.use("/api", emailRouter);
-app.use("/api", authRouter);
+app.use("/api", subscribeRouter);
 
 app.use((err, req, res, next) => {
   console.error(err.message);
