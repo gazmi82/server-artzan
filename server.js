@@ -1,7 +1,8 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const connectDB = require("./config/db"); // Ensure the path is correct
+const connectDB = require("./config/db");
 const subscribeRouter = require("./routes/subscribe");
+const calendarRouter = require("./routes/calendar");
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/api", subscribeRouter);
+app.use("/api/calendar", calendarRouter);
 
 app.use((err, req, res, next) => {
   console.error(err.message);
