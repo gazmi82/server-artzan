@@ -1,25 +1,34 @@
 const { google } = require("googleapis");
-const { JWT } = require("google-auth-library");
 const nodemailer = require("nodemailer");
-const Event = require("../models/Event"); // Import the Event model
-const credentials = require("../artz.json"); // Update the path to your credentials file
+const Event = require("../models/Event");
 require("dotenv").config();
 
-const jwtClient = new JWT({
-  email: credentials.client_email,
-  key: credentials.private_key,
-  scopes: [
-    "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/calendar.events",
-  ],
+const scopes = [
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/meetings.space.created",
+  "https://mail.google.com/",
+  "https://www.googleapis.com/auth/calendar.events",
+];
+
+// Initialize the OAuth2 client
+const oauth2Client = new google.auth.OAuth2(
+  process.env.CLIENT_ID,
+  process.env.CLIENT_SECRET,
+  process.env.REDIRECT_URI,
+  scopes
+);
+
+// Set the credentials with the refresh token
+oauth2Client.setCredentials({
+  refresh_token: process.env.REFRESH_TOKEN,
 });
 
-const calendar = google.calendar({ version: "v3", auth: jwtClient });
+const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
 const createGoogleMeetEvent = async (eventData) => {
   try {
-    // Authorize the JWT client
-    await jwtClient.authorize();
+    // Ensure the client is authorized by getting a fresh access token
+    await oauth2Client.getAccessToken();
 
     // Create a Google Calendar event with a Google Meet link
     const event = {
@@ -28,13 +37,12 @@ const createGoogleMeetEvent = async (eventData) => {
       description: eventData.description,
       start: {
         dateTime: eventData.start,
-        timeZone: eventData.timeZone || "America/Los_Angeles", // Allow dynamic timezone or default
+        timeZone: eventData.timeZone || "America/Los_Angeles",
       },
       end: {
         dateTime: eventData.end,
-        timeZone: eventData.timeZone || "America/Los_Angeles", // Allow dynamic timezone or default
+        timeZone: eventData.timeZone || "America/Los_Angeles",
       },
-
       conferenceData: {
         createConferenceRequest: {
           requestId: Math.random().toString(36).substring(7),
@@ -48,23 +56,21 @@ const createGoogleMeetEvent = async (eventData) => {
     const response = await calendar.events.insert({
       calendarId: "primary",
       resource: event,
-      conferenceDataVersion: 1, // Required to generate Google Meet link
+      conferenceDataVersion: 1,
       sendNotifications: true,
     });
 
     const meetingUrl = response?.data?.hangoutLink;
-    console.log("Meeting url reeeesponse", response?.data?.meetingUrl);
-
-    console.log("Meeting URL generated:", meetingUrl);
+    console.log("Meeting URL generated:", response);
 
     // Save the event to MongoDB
     const savedEvent = new Event({
       summary: eventData.summary,
       location: eventData.location,
-      description: `${eventData.description}\nMeeting URL: ${meetingUrl}`, // Include meeting URL in the description
+      description: `${eventData.description}\nMeeting URL: ${meetingUrl}`,
       start: eventData.start,
       end: eventData.end,
-      timeZone: eventData.timeZone || "America/Los_Angeles", // Save timezone for consistency
+      timeZone: eventData.timeZone || "America/Los_Angeles",
     });
 
     await savedEvent.save();
@@ -81,6 +87,7 @@ const sendMeetingRequest = async (eventData) => {
   try {
     // Create the Google Meet event
     const { meetingUrl } = await createGoogleMeetEvent(eventData);
+    console.log("Meeting URLLLLLLLLLLLLLLLL:", eventData);
 
     // Include the meeting URL in the email body
     const content = `BEGIN:VCALENDAR\r\nPRODID:-//ACME/DesktopCalendar//EN\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nSUMMARY:${eventData.summary}\r\nLOCATION:${eventData.location}\r\nDESCRIPTION:${eventData.description}\nMeeting URL: ${meetingUrl}\r\nDTSTART:${eventData.start}\r\nDTEND:${eventData.end}\r\nEND:VEVENT\r\nEND:VCALENDAR`;

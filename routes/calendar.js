@@ -7,17 +7,26 @@ const router = express.Router();
 router.post(
   "/schedule-meeting",
   asyncHandler(async (req, res) => {
-    const { summary, location, description, start, end, sender, meetingUrl } =
-      req.body;
+    const {
+      summary,
+      location,
+      description,
+      start,
+      end,
+      sender,
+      meetingUrl,
+      timeZone,
+    } = req.body;
 
     const eventData = {
       summary,
       location,
-      description: `${description}\nMeeting URL: ${meetingUrl}`, // Include meeting URL in description
+      description: `${description}\nMeeting URL: ${meetingUrl}`,
       start: new Date(start).toISOString(),
       end: new Date(end).toISOString(),
-      sender, // The email of the person requesting the meeting
-      meetingUrl, // The meeting URL provided by the user
+      timeZone: timeZone,
+      sender,
+      meetingUrl,
     };
 
     try {
