@@ -43,6 +43,10 @@ const createGoogleMeetEvent = async (eventData) => {
         dateTime: eventData.end,
         timeZone: eventData.timeZone || "America/Los_Angeles",
       },
+      attendees: [
+        { email: "gsulcaj22@gmail.com" },
+        { email: "artizan.collaboration@gmail.com" },
+      ],
       conferenceData: {
         createConferenceRequest: {
           requestId: Math.random().toString(36).substring(7),
@@ -50,6 +54,13 @@ const createGoogleMeetEvent = async (eventData) => {
             type: "hangoutsMeet",
           },
         },
+      },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "email", minutes: 24 * 60 },
+          { method: "popup", minutes: 10 },
+        ],
       },
     };
 
@@ -87,7 +98,6 @@ const sendMeetingRequest = async (eventData) => {
   try {
     // Create the Google Meet event
     const { meetingUrl } = await createGoogleMeetEvent(eventData);
-    console.log("Meeting URLLLLLLLLLLLLLLLL:", eventData);
 
     // Include the meeting URL in the email body
     const content = `BEGIN:VCALENDAR\r\nPRODID:-//ACME/DesktopCalendar//EN\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nSUMMARY:${eventData.summary}\r\nLOCATION:${eventData.location}\r\nDESCRIPTION:${eventData.description}\nMeeting URL: ${meetingUrl}\r\nDTSTART:${eventData.start}\r\nDTEND:${eventData.end}\r\nEND:VEVENT\r\nEND:VCALENDAR`;
