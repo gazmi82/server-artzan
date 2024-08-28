@@ -8,6 +8,7 @@ const scopes = [
   "https://www.googleapis.com/auth/meetings.space.created",
   "https://mail.google.com/",
   "https://www.googleapis.com/auth/calendar.events",
+  "gazmir@artizan.tv",
 ];
 
 // Initialize the OAuth2 client
@@ -32,56 +33,53 @@ const createGoogleMeetEvent = async (eventData) => {
 
     // Create a Google Calendar event with a Google Meet link
     const event = {
-      summary: eventData.summary,
-      location: eventData.location,
-      description: eventData.description,
+      summary: "Test Event",
+      location: "Online",
+      description: "Test event description",
       start: {
         dateTime: eventData.start,
-        timeZone: eventData.timeZone || "America/Los_Angeles",
       },
       end: {
         dateTime: eventData.end,
-        timeZone: eventData.timeZone || "America/Los_Angeles",
       },
       attendees: [
         { email: "gsulcaj22@gmail.com" },
         { email: "artizan.collaboration@gmail.com" },
       ],
       conferenceData: {
-        createConferenceRequest: {
-          requestId: Math.random().toString(36).substring(7),
+        createRequest: {
+          requestId: "random-string",
           conferenceSolutionKey: {
             type: "hangoutsMeet",
           },
         },
       },
-      reminders: {
-        useDefault: false,
-        overrides: [
-          { method: "email", minutes: 24 * 60 },
-          { method: "popup", minutes: 10 },
-        ],
-      },
+
+      sendUpdates: "all",
     };
+
+    console.log("eveeeent", event);
 
     const response = await calendar.events.insert({
       calendarId: "primary",
-      resource: event,
       conferenceDataVersion: 1,
       sendNotifications: true,
+      resource: event,
     });
 
     const meetingUrl = response?.data?.hangoutLink;
-    console.log("Meeting URL generated:", response);
+    console.log("Meeting URL generated:", meetingUrl);
 
     // Save the event to MongoDB
     const savedEvent = new Event({
       summary: eventData.summary,
       location: eventData.location,
-      description: `${eventData.description}\nMeeting URL: ${meetingUrl}`,
+      description: `${eventData.description}`,
       start: eventData.start,
       end: eventData.end,
       timeZone: eventData.timeZone || "America/Los_Angeles",
+      sender: eventData.sender,
+      meetingUrl,
     });
 
     await savedEvent.save();
